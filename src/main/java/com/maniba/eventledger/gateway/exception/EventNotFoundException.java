@@ -1,0 +1,8 @@
+package com.maniba.eventledger.gateway.exception;
+
+public class EventNotFoundException extends RuntimeException {
+
+    public EventNotFoundException(String message) {
+        super(message);
+    }
+}
