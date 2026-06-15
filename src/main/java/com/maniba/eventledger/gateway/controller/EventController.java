@@ -6,6 +6,8 @@ import com.maniba.eventledger.gateway.service.EventProcessingResult;
 import com.maniba.eventledger.gateway.service.EventService;
 import com.maniba.eventledger.gateway.util.MdcUtils;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,8 +25,8 @@ import java.util.List;
 @RequestMapping("/events")
 public class EventController {
 
+    private static final Logger log = LoggerFactory.getLogger(EventController.class);
     private static final String TRACE_ID_HEADER = "X-Trace-Id";
-    private static final String MDC_TRACE_ID_KEY = "traceId";
 
     private final EventService eventService;
 
@@ -38,6 +40,8 @@ public class EventController {
             @RequestHeader(value = TRACE_ID_HEADER, required = false) String traceIdHeader) {
 
         String traceId = traceIdHeader != null ? traceIdHeader : MdcUtils.getTraceId();
+        log.info("submitEvent requested eventId={} accountId={} traceId={}", request.getEventId(), request.getAccountId(), traceId);
+
         EventProcessingResult result = eventService.submitEvent(request, traceId);
         URI location = URI.create(String.format("/events/%s", result.response().getEventId()));
 
@@ -49,12 +53,14 @@ public class EventController {
 
     @GetMapping("/{eventId}")
     public ResponseEntity<EventResponse> getEvent(@PathVariable String eventId) {
+        log.info("getEvent requested eventId={}", eventId);
         EventResponse response = eventService.getEvent(eventId);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping
     public ResponseEntity<List<EventResponse>> getEventsByAccount(@RequestParam(name = "account") String accountId) {
+        log.info("getEventsByAccount requested accountId={}", accountId);
         List<EventResponse> responses = eventService.getEventsByAccount(accountId);
         return ResponseEntity.ok(responses);
     }

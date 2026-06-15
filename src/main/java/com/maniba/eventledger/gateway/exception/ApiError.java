@@ -1,7 +1,10 @@
 package com.maniba.eventledger.gateway.exception;
 
+import lombok.Getter;
+
 import java.time.Instant;
 
+@Getter
 public class ApiError {
 
     private final String error;
@@ -16,19 +19,4 @@ public class ApiError {
         this.timestamp = timestamp;
     }
 
-    public String getError() {
-        return error;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public String getTraceId() {
-        return traceId;
-    }
-
-    public Instant getTimestamp() {
-        return timestamp;
-    }
 }

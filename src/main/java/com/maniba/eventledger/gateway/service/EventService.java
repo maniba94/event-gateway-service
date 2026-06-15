@@ -37,11 +37,11 @@ public class EventService {
 
     @Transactional
     public EventProcessingResult submitEvent(EventRequest request, String traceId) {
-        log.info("event received eventId={} accountId={}", request.getEventId(), request.getAccountId());
+        log.info("event received eventId={} accountId={} traceId={}", request.getEventId(), request.getAccountId(), traceId);
 
         return eventRepository.findByEventId(request.getEventId())
                 .map(existing -> {
-                    log.info("duplicate event detected eventId={}", request.getEventId());
+                    log.info("duplicate event detected eventId={} traceId={}", request.getEventId(), traceId);
                     eventMetrics.incrementDuplicate();
                     return new EventProcessingResult(mapToResponse(existing), false);
                 })
@@ -53,12 +53,14 @@ public class EventService {
     }
 
     public EventResponse getEvent(String eventId) {
+        log.info("fetching event eventId={}", eventId);
         EventRecord record = eventRepository.findByEventId(eventId)
                 .orElseThrow(() -> new EventNotFoundException("Event not found for eventId: " + eventId));
         return mapToResponse(record);
     }
 
     public List<EventResponse> getEventsByAccount(String accountId) {
+        log.info("fetching events for accountId={}", accountId);
         return eventRepository.findByAccountIdOrderByEventTimestampAsc(accountId)
                 .stream()
                 .map(this::mapToResponse)
@@ -80,20 +82,21 @@ public class EventService {
                 .build();
 
         record = eventRepository.save(record);
-        log.info("event status updated eventId={} status={}", record.getEventId(), record.getStatus());
+        log.info("event status updated eventId={} status={} traceId={}", record.getEventId(), record.getStatus(), traceId);
 
         try {
+            log.info("calling Account Service eventId={} accountId={} traceId={}", record.getEventId(), record.getAccountId(), traceId);
             accountClient.postTransaction(record.getAccountId(), request, traceId);
             record.setStatus(EventStatus.APPLIED);
             record = eventRepository.save(record);
-            log.info("account service call succeeded eventId={}", record.getEventId());
-            log.info("event status updated eventId={} status={}", record.getEventId(), record.getStatus());
+            log.info("account service call succeeded eventId={} traceId={}", record.getEventId(), traceId);
+            log.info("event status updated eventId={} status={} traceId={}", record.getEventId(), record.getStatus(), traceId);
             return mapToResponse(record);
         } catch (AccountServiceUnavailableException ex) {
             record.setStatus(EventStatus.FAILED);
             eventRepository.save(record);
             eventMetrics.incrementFailed();
-            log.error("account service unavailable eventId={}", record.getEventId());
+            log.error("account service unavailable eventId={} traceId={}", record.getEventId(), traceId);
             throw ex;
         }
     }

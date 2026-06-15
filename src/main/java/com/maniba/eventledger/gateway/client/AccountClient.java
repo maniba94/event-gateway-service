@@ -51,6 +51,6 @@ public class AccountClient {
 
     @SuppressWarnings("unused")
     private EventResponse accountServiceFallback(String accountId, EventRequest request, String traceId, Throwable throwable) {
-        throw new AccountServiceUnavailableException("Account service unavailable", throwable);
+        throw new AccountServiceUnavailableException("Fall back response - Account service unavailable", throwable);
     }
 }
